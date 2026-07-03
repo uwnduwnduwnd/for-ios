@@ -1,59 +1,58 @@
-name: Build IPA (No Signing - TrollStore用)
+name: Build unsigned IPA
 
 on:
   workflow_dispatch:
 
 jobs:
   build:
-    runs-on: macos-latest
+    runs-on: macos-15
 
     steps:
-      - name: ソースコードを取得
+      - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Xcodeをセットアップ
-        uses: maxim-lobanov/setup-xcode@v1
-        with:
-          xcode-version: '26.6.0'     # ← ここを変更
+      - name: Show available Xcode versions
+        run: ls /Applications | grep Xcode
 
-      - name: IPAをビルド（署名なし）
+      - name: Show Xcode version in use
+        run: xcodebuild -version
+
+      - name: Resolve Swift Package dependencies
         run: |
-          xcodebuild archive \
+          xcodebuild -resolvePackageDependencies \
+            -project Stoat.xcodeproj \
+            -scheme Stoat
+
+      - name: Build unsigned archive
+        run: |
+          xcodebuild clean archive \
             -project Stoat.xcodeproj \
             -scheme Stoat \
-            -archivePath ./build/Stoat.xcarchive \
-            -destination 'generic/platform=iOS' \
-            CODE_SIGNING_ALLOWED=NO \
+            -sdk iphoneos \
+            -configuration Release \
+            -destination "generic/platform=iOS" \
+            -archivePath "$RUNNER_TEMP/Stoat.xcarchive" \
             -skipPackagePluginValidation \
-            -disableAutomaticPackageResolution \
-            -quiet
+            -skipMacroValidation \
+            CODE_SIGNING_ALLOWED=NO \
+            CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGN_IDENTITY="" \
+            CODE_SIGN_STYLE=Manual \
+            AD_HOC_CODE_SIGNING_ALLOWED=NO \
+            DEVELOPMENT_TEAM=""
 
-      - name: IPAを書き出し（署名なし）
+      - name: Package into IPA
         run: |
-          mkdir -p ./build/ipa
+          cd "$RUNNER_TEMP"
+          mkdir -p Payload
+          cp -r "Stoat.xcarchive/Products/Applications/Stoat.app" Payload/
+          zip -r Stoat-unsigned.ipa Payload
+          mkdir -p "$GITHUB_WORKSPACE/output"
+          cp Stoat-unsigned.ipa "$GITHUB_WORKSPACE/output/"
 
-          cat > ./build/exportOptions.plist << 'EOF'
-          <?xml version="1.0" encoding="UTF-8"?>
-          <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-          <plist version="1.0">
-          <dict>
-              <key>method</key>
-              <string>development</string>
-              <key>signingStyle</key>
-              <string>manual</string>
-              <key>stripSwiftSymbols</key>
-              <true/>
-          </dict>
-          </plist>
-          EOF
-
-          xcodebuild -exportArchive \
-            -archivePath ./build/Stoat.xcarchive \
-            -exportPath ./build/ipa \
-            -exportOptionsPlist ./build/exportOptions.plist
-
-      - name: IPAをアップロード
+      - name: Upload IPA artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Stoat.ipa
-          path: ./build/ipa/*.ipa
+          name: Stoat-unsigned-ipa
+          path: output/Stoat-unsigned.ipa
+          retention-days: 7
