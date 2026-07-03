@@ -14,7 +14,7 @@ jobs:
       - name: Xcodeをセットアップ
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: '16.2'   # ← これが重要
+          xcode-version: latest-stable   # ← これが重要
 
       - name: IPAをビルド（署名なし）
         run: |
