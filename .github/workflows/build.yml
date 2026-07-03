@@ -14,7 +14,7 @@ jobs:
       - name: IPAをビルド（署名なし）
         run: |
           xcodebuild archive \
-            -workspace Stoat.xcworkspace \
+            -project Stoat.xcodeproj \
             -scheme Stoat \
             -archivePath ./build/Stoat.xcarchive \
             -destination 'generic/platform=iOS' \
