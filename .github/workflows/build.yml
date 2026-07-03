@@ -14,13 +14,7 @@ jobs:
       - name: Xcodeをセットアップ
         uses: maxim-lobanov/setup-xcode@v1
         with:
-          xcode-version: latest-stable
-
-      - name: パッケージを解決
-        run: |
-          xcodebuild -resolvePackageDependencies \
-            -project Stoat.xcodeproj \
-            -scheme Stoat
+          xcode-version: '15.4'     # ← ここを 15.4 に変更
 
       - name: IPAをビルド（署名なし）
         run: |
