@@ -60,7 +60,7 @@ jobs:
               <key>stripSwiftSymbols</key>
               <true/>
               <key>teamID</key>
-              <string>YOUR_TEAM_ID</string>
+              <string>8DXR394S59</string>
           </dict>
           </plist>
           EOF
